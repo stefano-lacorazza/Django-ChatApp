@@ -15,7 +15,7 @@
 
         <form method="post" class="form-group" style="max-width: 600px;">
             {% csrf_token %}
-            {{form|crispy}}
+            {{form}}
             <p>Already have an account?<a href="/login">Login here.</a></p>
             <button type="submit" class="btn btn-success" >Sign Up</button>
 

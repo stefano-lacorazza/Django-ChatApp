@@ -50,6 +50,10 @@ def index(request):
         id = getUserId(username)
         friends = getFriendsList(id)
         return render(request, "chat/Base.html", {'friends': friends})
+        
+
+        #return render(request, "chat/Base.html", {})
+
 
 
 def search(request):
