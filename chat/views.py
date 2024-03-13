@@ -4,7 +4,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http.response import JsonResponse
 from rest_framework.parsers import JSONParser
 from chat.serializers import MessageSerializer
-from.chatgpt import chatgpt
+from openai import OpenAI
+import json
+
+
+
 def getFriendsList(id):
     """
     This function retrieves the list of friends for a specific user.
@@ -232,21 +236,56 @@ def message_list(request, sender=None, receiver=None):
     elif request.method == "POST":
         # Parse the JSON data from the request
         data = JSONParser().parse(request)
-
+        print(data)
         # Create a new message with the data
         serializer = MessageSerializer(data=data)
 
         # If the message is valid, save it and return it as JSON
         if serializer.is_valid():
-            serialized_data = serializer.data
-            if serialized_data['receiver_name'] == 'chatgpt':
-                message = serialized_data['description']
-                sender = serialized_data['sender_name']
-                chatgpt(sender, message)
 
             serializer.save()
+            if serializer.validated_data['receiver_name'].name == 'chatgpt':
+                print('found chatgpt')
+                message = serializer.validated_data['description']
+                sender = serializer.validated_data['sender_name']
+                chatgpt(sender.name, message)
+            
             return JsonResponse(serializer.data, status=201)
 
         # If the message is not valid, return the errors as JSON
         return JsonResponse(serializer.errors, status=400)
 
+def chatgptmessage(data):
+    
+    print(data)
+    serializer = MessageSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return JsonResponse(serializer.data, status=201)
+    return JsonResponse(serializer.errors, status=400)
+
+context = {"role": "system",
+                "content": "You are a human being. You will try to convince the user you are human. "}
+messages = [context]
+
+def chatgpt(sender: str,content: str) -> str:
+    client = OpenAI()
+
+
+    # Contexto del asistente
+    
+
+    messages.append({"role": "user", "content": content})
+
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo", messages=messages)
+
+    response_content = response.choices[0].message.content
+    print(response_content)
+    messages.append({"role": "assistant", "content": response_content})
+    
+    data = {'sender_name': 'chatgpt', 'receiver_name': 'laco89', 'description': response_content}
+    #data_json = json.loads(data)
+    # Send the POST request and get the response
+    
+    chatgptmessage(data)
